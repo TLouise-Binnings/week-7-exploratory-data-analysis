@@ -1,25 +1,29 @@
 ---
 title: "Exploratory Data Analysis"
+author: Theresa Binnings (and Judith Canner)
 format: html
 embed-resources: true
 execute: 
   echo: true
+  eval: true
 ---
 
 
 ```{r}
 #| label: setup
+#| include: false
 library(tidyverse)
 ```
 
 
 ```{r}
 #| label: load-babynames
+#| include: false
 babynames <- read_csv("babynames_500.csv")
 ```
 
 
-# dplyr - `summarize()`
+# dplyr - `summarize()` 
 
 ## Compute a table of summaries
 
@@ -44,10 +48,10 @@ Complete the code below to extract the rows where `name == "Lincoln"`. Then use 
 ```{r}
 #| label: popularity-lincoln
 
-babynames ___ 
-  filter(_______________________) ___
-  ___________(total = ________, 
-              first = _______)
+babynames |> 
+  filter(name == "Lincoln") |>
+  summarise(total = sum(n), 
+              first = min(year))
 ```
 
 
@@ -84,7 +88,7 @@ babynames |>
 ```
 # dplyr - `group_by()`
 
-**NOTE** The `group_by()` function is never used alone. It is always used before either `summarize()` or `mutate()` to communicate to those functions how to perform thier calculations.  
+**NOTE** The `group_by()` function is never used alone. It is always used before either `summarize()` or `mutate()` to communicate to those functions how to perform their calculations.  
 
 ```{r}
 #| label: create-pollution
@@ -121,6 +125,15 @@ pollution |>
             sum = sum(amount),
             n = n())
 ```
+```{r}
+#| label: summarize-city-pollution-size
+
+pollution |> 
+  group_by(size) |> #only new line of code
+  summarize(mean = mean(amount),
+            sum = sum(amount),
+            n = n())
+```
 
 
 ```{r}
@@ -146,15 +159,28 @@ Use `group_by()`, `summarise()`, and `arrange()` to display the ten most popular
 #| label: top-10-names
 
 babynames |> 
-  _______(name, sex) |>  
-  _______(total = _____(n)) |> 
-  _______(desc(_____)) |> 
-  head(10)
+  group_by(name, sex) |>  
+  summarise(total = sum(n)) |> 
+  arrange(desc(total)) |> 
+  head(10) |>
+  
+  ggplot(mapping = aes(x = fct_reorder(name, 
+                                       desc(total)), 
+                       y = total, 
+                       fill = sex)) +
+  geom_col() +
+  scale_fill_brewer() +
+  theme_light() +
+  labs(x = "Top 10 Popular Names in Top 500 in US",
+       y = "Total Number of Infants born in Top 500",
+       fill = "Sex",
+       title = "Names Since 2005")
+  
 ```
 
 
 Go ahead and add one the `ggplot` code to make the visualization.
-
+(Made plot above)
 
 # dplyr - `mutate()`
 Use `mutate()` to create NEW columns/variables within your data set.  
@@ -186,10 +212,11 @@ Rank each name _within its year and sex_.
 ```{r}
 #| label: ranking-names
 
+#min rank -- 
 babynames |> 
   select(name, year, sex, prop) |> 
-  group_by(____, ____) |> 
-  ______(rank = min_rank(____(prop))) |> 
+  group_by(sex, year) |> 
+  mutate(rank = min_rank(desc(prop))) |> 
   arrange(year, sex, rank)
 ```
 
